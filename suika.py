@@ -24,13 +24,13 @@ def add_walls_and_floor(space, width, height):
     floor.elasticity = 0.8
     floor.friction = 1
     space.add(floor)
-    
+
     # 左の壁を追加
     left_wall = pymunk.Segment(space.static_body, (0, 0), (0, height), 1)
     left_wall.elasticity = 0.8
     left_wall.friction = 1
     space.add(left_wall)
-    
+
     # 右の壁を追加
     right_wall = pymunk.Segment(space.static_body, (width, 0), (width, height), 1)
     right_wall.elasticity = 0.8
@@ -49,21 +49,11 @@ class Fruit:
         self.shape.elasticity = 0.8
         self.shape.friction = 0.5
         self.evolution = evolution
+        self.color = fruit_colors[evolution]  # 色を保持する
         self.space = space
         self.space.add(self.body, self.shape)
 
 # フルーツの色を設定
-fruit_colors = {
-    'strawberry': (255, 0, 0),
-    'grape': (128, 0, 128),
-    'orange': (255, 165, 0),
-    # ...他の果物の色も追加...
-}
-
-fruit_positions = [(100, -30), (200, -30), (300, -30), (400, -30), (500, -30)]
-fruit_sizes = [20, 25, 30, 35, 40]
-
-# フルーツの色を設定  ここは画像に差し代わる
 fruit_colors = {
     'strawberry': (255, 0, 0),
     'grape': (128, 0, 128),
@@ -77,6 +67,15 @@ fruit_colors = {
     'watermelon': (155, 0, 0)
 }
 
+fruit_positions = [(100, -30), (200, -30), (300, -30), (400, -30), (500, -30)]
+fruit_sizes = [20, 25, 30, 35, 40]
+
+# 初期フルーツの色を設定（これらはクリックで生成されない）
+initial_fruit_colors = {
+    'strawberry': (255, 0, 0),
+    'grape': (128, 0, 128),
+    'orange': (255, 165, 0),
+}
 
 # フルーツの進化ルール
 evolution_rules = {
@@ -95,34 +94,46 @@ evolution_rules = {
 # スコア変数
 score = 0
 
+# フルーツ生成関数（クリックで生成されるフルーツ）
 def generate_fruit(space):
     position = random.choice(fruit_positions)
     size = random.choice(fruit_sizes)
-    evolution = random.choice(list(evolution_rules.keys()))
+    # クリックによって生成されるフルーツは初期フルーツのみ
+    evolution = random.choice(list(initial_fruit_colors.keys()))
     return Fruit(position, size, evolution, space)
 
-# 衝突コールバック関数
+# 衝突コールバック関数を更新
 def collision_handler(arbiter, space, data):
-    global score
+    global score, fruits
     fruit_shape1, fruit_shape2 = arbiter.shapes
     fruit1, fruit2 = fruit_shape1.body, fruit_shape2.body
 
-    # 両方のフルーツがまだ存在するかチェック
-    if fruit1 in fruits and fruit2 in fruits:
-      # フルーツの種類をチェックして、次の進化へ
-      if fruit1.evolution == fruit2.evolution:
-          next_evolution = evolution_rules[fruit1.evolution][0]
-          if next_evolution:
-              new_fruit = generate_fruit(space)
-              new_fruit.body.position = fruit1.position
-              new_fruit.evolution = next_evolution
-              score += evolution_rules[fruit1.evolution][1]
-              fruits.append(new_fruit)
-              # 古いフルーツを削除
-              space.remove(fruit_shape1, fruit1)
-              space.remove(fruit_shape2, fruit2)
-              fruits.remove(fruit1)
-              fruits.remove(fruit2)
+    # Identify the Fruit instances from the shapes.
+    fruit1_instance = next((f for f in fruits if f.body == fruit1), None)
+    fruit2_instance = next((f for f in fruits if f.body == fruit2), None)
+
+    # Check if both are fruits and have the same evolution state.
+    if fruit1_instance and fruit2_instance and fruit1_instance.evolution == fruit2_instance.evolution:
+        # Get the slower fruit.
+        slower_fruit = fruit1_instance if fruit1.velocity.length < fruit2.velocity.length else fruit2_instance
+        faster_fruit = fruit2_instance if slower_fruit == fruit1_instance else fruit1_instance
+
+        # Evolve the slower fruit.
+        next_evolution, points = evolution_rules[slower_fruit.evolution]
+        if next_evolution:
+            # Update the score.
+            score += points
+            # Create a new fruit with the next evolution.
+            new_fruit = Fruit(slower_fruit.body.position, fruit_sizes[-1], next_evolution, space)
+            new_fruit.body.velocity = slower_fruit.body.velocity  # Maintain the velocity after evolution.
+            new_fruit.color = fruit_colors[next_evolution]  # Assign the color of the next evolution.
+            fruits.append(new_fruit)
+            # Remove the old fruits.
+            space.remove(fruit_shape1, fruit1)
+            space.remove(fruit_shape2, fruit2)
+            fruits.remove(fruit1_instance)
+            fruits.remove(fruit2_instance)
+
     return True
 
 # 衝突ハンドラーの設定
@@ -135,45 +146,47 @@ fruits = []
 # ゲームのメインループ
 running = True
 while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        # マウスがクリックされたときにフルーツを生成する
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            # マウスの位置にフルーツを生成する
-            mouse_position = pygame.mouse.get_pos()
-            fruit = generate_fruit(space)
-            fruit.body.position = mouse_position
-            fruits.append(fruit)
+  for event in pygame.event.get():
+      if event.type == pygame.QUIT:
+          running = False
+      # マウスがクリックされたときにフルーツを生成する
+      if event.type == pygame.MOUSEBUTTONDOWN:
+          # マウスの位置にフルーツを生成する
+          mouse_position = pygame.mouse.get_pos()
+          fruit = generate_fruit(space)
+          fruit.body.position = mouse_position
+          fruits.append(fruit)
 
-    # 物理演算を進める
-    space.step(1/50)
+  # 物理演算を進める
+  space.step(1/50)
 
-    # フルーツが画面下部にあるかチェックし、削除
-    for fruit in fruits[:]:
-      if fruit.body.position.y > height - 50:  # 床の位置を考慮
-        space.remove(fruit.shape, fruit.body)
-        fruits.remove(fruit)
+  # 画面をクリア
+  screen.fill((255, 255, 255))
 
-    # 画面をクリア
-    screen.fill((255, 255, 255))
+  # フルーツが画面下部にあるかチェックし、削除
+  for fruit in fruits[:]:
+    if fruit.body.position.y > height - 50:  # 床の位置を考慮
+      space.remove(fruit.shape, fruit.body)
+      fruits.remove(fruit)
 
-    # フルーツと物理空間を描画
-    space.debug_draw(draw_options)
 
-    # フルーツの描画
-    for fruit in fruits:
-      fruit_color = fruit_colors[fruit.evolution]
-      pygame.draw.circle(screen, fruit_color, fruit.body.position, fruit.shape.radius)
+  # フルーツと物理空間を描画
+  space.debug_draw(draw_options)
 
-    # スコアを描画
-    score_text = font.render(f'Score: {score}', True, (0, 0, 0))
-    screen.blit(score_text, (width - 200, 10))  # スコアを右上に表示
+  # フルーツの描画
+  for fruit in fruits:
+    # 進化したフルーツの色を取得
+    fruit_color = fruit_colors[fruit.evolution]
+    pygame.draw.circle(screen, fruit_color, (int(fruit.body.position.x), int(fruit.body.position.y)), int(fruit.shape.radius))
 
-    # 画面を更新
-    pygame.display.flip()
+  # スコアを描画
+  score_text = font.render(f'Score: {score}', True, (0, 0, 0))
+  screen.blit(score_text, (width - 200, 10))  # スコアを右上に表示
 
-    # FPSを設定
-    clock.tick(50)
+  # 画面を更新
+  pygame.display.flip()
+
+  # FPSを設定
+  clock.tick(50)
 
 pygame.quit()
