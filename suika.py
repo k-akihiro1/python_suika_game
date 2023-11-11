@@ -68,7 +68,20 @@ fruit_colors = {
 }
 
 fruit_positions = [(100, -30), (200, -30), (300, -30), (400, -30), (500, -30)]
-fruit_sizes = [20, 25, 30, 35, 40]
+# フルーツサイズの辞書
+fruit_sizes = {
+    'strawberry': 20,
+    'grape': 25,
+    'orange': 30,
+    'persimmon': 35,
+    'apple': 40,
+    'pear': 45,
+    'pineapple': 50,
+    'peach': 55,
+    'melon': 60,
+    'watermelon': 65
+}
+
 
 # 初期フルーツの色を設定（これらはクリックで生成されない）
 initial_fruit_colors = {
@@ -97,9 +110,8 @@ score = 0
 # フルーツ生成関数（クリックで生成されるフルーツ）
 def generate_fruit(space):
     position = random.choice(fruit_positions)
-    size = random.choice(fruit_sizes)
-    # クリックによって生成されるフルーツは初期フルーツのみ
     evolution = random.choice(list(initial_fruit_colors.keys()))
+    size = fruit_sizes[evolution]  # 進化段階に応じたサイズを辞書から取得
     return Fruit(position, size, evolution, space)
 
 # 衝突コールバック関数を更新
@@ -124,7 +136,7 @@ def collision_handler(arbiter, space, data):
             # Update the score.
             score += points
             # Create a new fruit with the next evolution.
-            new_fruit = Fruit(slower_fruit.body.position, fruit_sizes[-1], next_evolution, space)
+            new_fruit = Fruit(slower_fruit.body.position, fruit_sizes[next_evolution], next_evolution, space)
             new_fruit.body.velocity = slower_fruit.body.velocity  # Maintain the velocity after evolution.
             new_fruit.color = fruit_colors[next_evolution]  # Assign the color of the next evolution.
             fruits.append(new_fruit)
