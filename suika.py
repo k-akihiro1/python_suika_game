@@ -16,6 +16,29 @@ draw_options = pymunk.pygame_util.DrawOptions(screen)
 space = pymunk.Space()
 space.gravity = (0, 900)
 
+# 床と壁を追加する関数
+def add_walls_and_floor(space, width, height):
+    # 床を追加
+    floor = pymunk.Segment(space.static_body, (0, height - 50), (width, height - 50), 1)
+    floor.elasticity = 0.8
+    floor.friction = 1
+    space.add(floor)
+    
+    # 左の壁を追加
+    left_wall = pymunk.Segment(space.static_body, (0, 0), (0, height), 1)
+    left_wall.elasticity = 0.8
+    left_wall.friction = 1
+    space.add(left_wall)
+    
+    # 右の壁を追加
+    right_wall = pymunk.Segment(space.static_body, (width, 0), (width, height), 1)
+    right_wall.elasticity = 0.8
+    right_wall.friction = 1
+    space.add(right_wall)
+
+# 床と壁を追加
+add_walls_and_floor(space, width, height)
+
 # フルーツクラスの定義
 class Fruit:
     def __init__(self, position, size, evolution, space):
@@ -53,7 +76,7 @@ def generate_fruit(space):
     return Fruit(position, size, evolution, space)
 
 # フルーツの生成
-fruits = [generate_fruit(space) for _ in range(5)]
+fruits = []
 
 # ゲームのメインループ
 running = True
@@ -61,6 +84,13 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        # マウスがクリックされたときにフルーツを生成する
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # マウスの位置にフルーツを生成する
+            mouse_position = pygame.mouse.get_pos()
+            fruit = generate_fruit(space)
+            fruit.body.position = mouse_position
+            fruits.append(fruit)
 
     # 物理演算を進める
     space.step(1/50)
@@ -71,7 +101,7 @@ while running:
     # フルーツと物理空間を描画
     space.debug_draw(draw_options)
 
-    # フルーツの進化処理（疑似コード）
+    # フルーツの進化処理
     for fruit in fruits:
         # ここに進化のロジックを追加...
         pass
