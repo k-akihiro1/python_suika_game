@@ -112,7 +112,11 @@ def generate_fruit(space):
     position = random.choice(fruit_positions)
     evolution = random.choice(list(initial_fruit_colors.keys()))
     size = fruit_sizes[evolution]  # 進化段階に応じたサイズを辞書から取得
-    return Fruit(position, size, evolution, space)
+    fruit = Fruit(position, size, evolution, space)
+    # ランダムな初速を与える
+    impulse = random.uniform(-100, 100), 0  # X軸方向にランダムな速度、Y軸方向には0
+    fruit.body.apply_impulse_at_local_point(impulse)
+    return fruit
 
 # 衝突コールバック関数を更新
 def collision_handler(arbiter, space, data):
@@ -145,7 +149,13 @@ def collision_handler(arbiter, space, data):
             space.remove(fruit_shape2, fruit2)
             fruits.remove(fruit1_instance)
             fruits.remove(fruit2_instance)
-
+            
+            # Apply a small impulse to the new fruit to avoid stacking
+            impulse = random.uniform(-50, 50), random.uniform(100, 200)  # Adjust the values as needed
+            new_fruit.body.apply_impulse_at_local_point(impulse)
+            # Apply an opposite impulse to the old fruit to ensure separation
+            opposite_impulse = (-impulse[0], -impulse[1])
+            slower_fruit.body.apply_impulse_at_local_point(opposite_impulse)
     return True
 
 # 衝突ハンドラーの設定
