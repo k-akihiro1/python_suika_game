@@ -149,13 +149,17 @@ def collision_handler(arbiter, space, data):
             space.remove(fruit_shape2, fruit2)
             fruits.remove(fruit1_instance)
             fruits.remove(fruit2_instance)
-            
-            # Apply a small impulse to the new fruit to avoid stacking
-            impulse = random.uniform(-50, 50), random.uniform(100, 200)  # Adjust the values as needed
-            new_fruit.body.apply_impulse_at_local_point(impulse)
-            # Apply an opposite impulse to the old fruit to ensure separation
-            opposite_impulse = (-impulse[0], -impulse[1])
-            slower_fruit.body.apply_impulse_at_local_point(opposite_impulse)
+
+            # Apply a small random impulse to the new fruit to avoid stacking
+            impulse_x = random.uniform(-1, 1) * 100  # Randomize the direction
+            impulse_y = -100  # Apply a small upward force
+            new_fruit.body.apply_impulse_at_local_point((impulse_x, impulse_y))
+
+            # If fruits are stacked, apply a stronger horizontal impulse
+            if abs(fruit1.position.y - fruit2.position.y) < (fruit1_instance.shape.radius + fruit2_instance.shape.radius):
+                direction = 1 if fruit1.position.x > width / 2 else -1
+                horizontal_impulse = direction * 200  # Apply a stronger impulse to move fruits apart
+                new_fruit.body.apply_impulse_at_local_point((horizontal_impulse, 0))
     return True
 
 # 衝突ハンドラーの設定
