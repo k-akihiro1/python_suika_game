@@ -108,10 +108,9 @@ evolution_rules = {
 score = 0
 
 # フルーツ生成関数（クリックで生成されるフルーツ）
-def generate_fruit(space,mouse_position):
-    evolution = random.choice(list(initial_fruit_colors.keys()))
-    size = fruit_sizes[evolution]  # 進化段階に応じたサイズを辞書から取得
-    fruit = Fruit(mouse_position, size, evolution, space)
+def generate_fruit(space, mouse_position, fruit_name):
+    size = fruit_sizes[fruit_name]  # 進化段階に応じたサイズを辞書から取得
+    fruit = Fruit(mouse_position, size, fruit_name, space)
     # ランダムな初速を与える
     # impulse = random.uniform(-100, 100), 0  # X軸方向にランダムな速度、Y軸方向には0
     # fruit.body.apply_impulse_at_local_point(impulse)
@@ -168,18 +167,47 @@ handler.begin = collision_handler
 # フルーツの生成
 fruits = []
 
-# ゲームのメインループ
+# 次のフルーツを表示する関数
+def show_score_and_next_fruit(screen, font, score, next_fruit_name, next_fruit_color, next_fruit_size):
+    # スコアテキストを中央よりちょい右に表示
+    score_text = font.render(f'Score: {score}', True, (0, 0, 0))
+    score_text_pos_x = (width // 2) + 100  # 画面幅の半分より100ピクセル右
+    score_text_pos_y = 10  # 上から10ピクセルの位置
+    screen.blit(score_text, (score_text_pos_x, score_text_pos_y))
+
+    # 次のフルーツのテキストをスコアの下に表示
+    next_fruit_text = font.render('Next Fruit:', True, (0, 0, 0))
+    next_fruit_text_pos_x = score_text_pos_x
+    next_fruit_text_pos_y = score_text_pos_y + score_text.get_height() + 10  # スコアテキストの下
+    screen.blit(next_fruit_text, (next_fruit_text_pos_x, next_fruit_text_pos_y))
+
+    # 次のフルーツの図形をテキストの下に表示
+    next_fruit_shape_pos_x = next_fruit_text_pos_x + (next_fruit_text.get_width() - next_fruit_size) // 2
+    next_fruit_shape_pos_y = next_fruit_text_pos_y + next_fruit_text.get_height() + 30  # 次のフルーツテキストの下
+    pygame.draw.circle(screen, next_fruit_color, (next_fruit_shape_pos_x, next_fruit_shape_pos_y), next_fruit_size)
+
+####################
+# ゲームのメインループ #
+###################
 running = True
+next_fruit_name = random.choice(list(initial_fruit_colors.keys()))
+next_fruit_color = fruit_colors[next_fruit_name]
+next_fruit_size = fruit_sizes[next_fruit_name]
+
 while running:
   for event in pygame.event.get():
       if event.type == pygame.QUIT:
           running = False
-      # マウスがクリックされたときにフルーツを生成する
+      # マウスがクリックされたときにフルーツを生成
       if event.type == pygame.MOUSEBUTTONDOWN:
-          # マウスの位置にフルーツを生成する
+          # マウスの位置にフルーツを生成
           mouse_position = pygame.mouse.get_pos()
-          fruit = generate_fruit(space,mouse_position)
+          fruit = generate_fruit(space, mouse_position, next_fruit_name)
           fruits.append(fruit)
+          # 新しい次のフルーツを選択して表示を更新
+          next_fruit_name = random.choice(list(initial_fruit_colors.keys()))
+          next_fruit_color = fruit_colors[next_fruit_name]  # 次のフルーツの色
+          next_fruit_size = fruit_sizes[next_fruit_name]  # 次のフルーツのサイズ
 
   # 物理演算を進める
   space.step(1/50)
@@ -193,7 +221,6 @@ while running:
       space.remove(fruit.shape, fruit.body)
       fruits.remove(fruit)
 
-
   # フルーツと物理空間を描画
   space.debug_draw(draw_options)
 
@@ -203,9 +230,8 @@ while running:
     fruit_color = fruit_colors[fruit.evolution]
     pygame.draw.circle(screen, fruit_color, (int(fruit.body.position.x), int(fruit.body.position.y)), int(fruit.shape.radius))
 
-  # スコアを描画
-  score_text = font.render(f'Score: {score}', True, (0, 0, 0))
-  screen.blit(score_text, (width - 200, 10))  # スコアを右上に表示
+  # スコアと次のフルーツを画面に表示
+    show_score_and_next_fruit(screen, font, score, next_fruit_name, next_fruit_color, next_fruit_size)
 
   # 画面を更新
   pygame.display.flip()
