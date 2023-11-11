@@ -187,24 +187,25 @@ def show_score_and_next_fruit(screen, font, score, next_fruit_name, next_fruit_c
 # ゲームのメインループ #
 ###################
 running = True
+# 次のフルーツを選択
 next_fruit_name = random.choice(list(initial_fruit_colors.keys()))
 next_fruit_color = fruit_colors[next_fruit_name]
 next_fruit_size = fruit_sizes[next_fruit_name]
 
 while running:
   for event in pygame.event.get():
-      if event.type == pygame.QUIT:
-          running = False
-      # マウスがクリックされたときにフルーツを生成
-      if event.type == pygame.MOUSEBUTTONDOWN:
-          # マウスの位置にフルーツを生成
-          mouse_position = pygame.mouse.get_pos()
-          fruit = generate_fruit(space, mouse_position, next_fruit_name)
-          fruits.append(fruit)
-          # 新しい次のフルーツを選択して表示を更新
-          next_fruit_name = random.choice(list(initial_fruit_colors.keys()))
-          next_fruit_color = fruit_colors[next_fruit_name]  # 次のフルーツの色
-          next_fruit_size = fruit_sizes[next_fruit_name]  # 次のフルーツのサイズ
+    if event.type == pygame.QUIT:
+        running = False
+    # マウスがクリックされたときにフルーツを生成
+    if event.type == pygame.MOUSEBUTTONDOWN:
+        # マウスの位置にフルーツを生成
+        mouse_position = pygame.mouse.get_pos()
+        fruit = generate_fruit(space, mouse_position, next_fruit_name)
+        fruits.append(fruit)
+        # 新しい次のフルーツを選択して表示を更新
+        next_fruit_name = random.choice(list(initial_fruit_colors.keys()))
+        next_fruit_color = fruit_colors[next_fruit_name]  # 次のフルーツの色
+        next_fruit_size = fruit_sizes[next_fruit_name]  # 次のフルーツのサイズ
 
   # 物理演算を進める
   space.step(1/50)
@@ -212,20 +213,14 @@ while running:
   # 画面をクリア
   screen.fill((255, 255, 255))
 
-  # フルーツが画面下部にあるかチェックし、削除
-  for fruit in fruits[:]:
-    if fruit.body.position.y > height - 50:  # 床の位置を考慮
-      space.remove(fruit.shape, fruit.body)
-      fruits.remove(fruit)
-
   # フルーツと物理空間を描画
   space.debug_draw(draw_options)
 
-  # フルーツの描画
+  # フルーツを描写
   for fruit in fruits:
-    # 進化したフルーツの色を取得
-    fruit_color = fruit_colors[fruit.evolution]
-    pygame.draw.circle(screen, fruit_color, (int(fruit.body.position.x), int(fruit.body.position.y)), int(fruit.shape.radius))
+    if 0 < fruit.body.position.y < height - 50:  # フルーツが画面内にある場合のみ描画
+      fruit_color = fruit_colors[fruit.evolution]
+      pygame.draw.circle(screen, fruit_color, (int(fruit.body.position.x), int(fruit.body.position.y)), int(fruit.shape.radius))
 
   # スコアと次のフルーツを画面に表示
     show_score_and_next_fruit(screen, font, score, next_fruit_name, next_fruit_color, next_fruit_size)
@@ -236,4 +231,5 @@ while running:
   # FPSを設定
   clock.tick(50)
 
+# Pygameを終了
 pygame.quit()
