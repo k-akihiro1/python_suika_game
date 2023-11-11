@@ -108,14 +108,13 @@ evolution_rules = {
 score = 0
 
 # フルーツ生成関数（クリックで生成されるフルーツ）
-def generate_fruit(space):
-    position = random.choice(fruit_positions)
+def generate_fruit(space,mouse_position):
     evolution = random.choice(list(initial_fruit_colors.keys()))
     size = fruit_sizes[evolution]  # 進化段階に応じたサイズを辞書から取得
-    fruit = Fruit(position, size, evolution, space)
+    fruit = Fruit(mouse_position, size, evolution, space)
     # ランダムな初速を与える
-    impulse = random.uniform(-100, 100), 0  # X軸方向にランダムな速度、Y軸方向には0
-    fruit.body.apply_impulse_at_local_point(impulse)
+    # impulse = random.uniform(-100, 100), 0  # X軸方向にランダムな速度、Y軸方向には0
+    # fruit.body.apply_impulse_at_local_point(impulse)
     return fruit
 
 # 衝突コールバック関数を更新
@@ -179,8 +178,7 @@ while running:
       if event.type == pygame.MOUSEBUTTONDOWN:
           # マウスの位置にフルーツを生成する
           mouse_position = pygame.mouse.get_pos()
-          fruit = generate_fruit(space)
-          fruit.body.position = mouse_position
+          fruit = generate_fruit(space,mouse_position)
           fruits.append(fruit)
 
   # 物理演算を進める
