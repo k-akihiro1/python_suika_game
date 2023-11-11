@@ -111,9 +111,6 @@ score = 0
 def generate_fruit(space, mouse_position, fruit_name):
     size = fruit_sizes[fruit_name]  # 進化段階に応じたサイズを辞書から取得
     fruit = Fruit(mouse_position, size, fruit_name, space)
-    # ランダムな初速を与える
-    # impulse = random.uniform(-100, 100), 0  # X軸方向にランダムな速度、Y軸方向には0
-    # fruit.body.apply_impulse_at_local_point(impulse)
     return fruit
 
 # 衝突コールバック関数を更新
